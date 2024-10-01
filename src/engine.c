@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <gl/gl.h>
+#include <Windows.h>  // For GetTickCount64()
 
 struct Engine {
     WindowManager* window_manager;
@@ -15,6 +16,8 @@ struct Engine {
     ParticleSystem* particle_system;
     ShaderManager* shader_manager;
     int is_running;
+    float delta_time;
+    float last_frame_time;
 };
 
 Engine* engine_create(void) {
@@ -26,56 +29,75 @@ Engine* engine_create(void) {
         engine->particle_system = NULL;
         engine->shader_manager = NULL;
         engine->is_running = 0;
+        engine->delta_time = 0.0f;
+        engine->last_frame_time = 0.0f;
     }
     return engine;
 }
 
-int engine_initialize(Engine* engine) {
+bool engine_initialize(Engine* engine) {
     printf("Initializing engine...\n");
     
     engine->window_manager = window_manager_create();
     if (!engine->window_manager || !window_manager_initialize(engine->window_manager)) {
         fprintf(stderr, "Failed to initialize window manager\n");
-        return 0;
+        return false;
     }
 
     // TODO: Initialize other subsystems
     engine->input_manager = NULL;
     engine->renderer = NULL;
-    engine->particle_system = NULL;
     engine->shader_manager = NULL;
+
+    // Create particle system
+    engine->particle_system = particle_system_create(1000);
+    if (!engine->particle_system) {
+        fprintf(stderr, "Failed to create particle system\n");
+        return false;
+    }
 
     engine->is_running = 1;
     printf("Engine initialized successfully.\n");
-    return 1;
+    return true;
 }
 
-int engine_is_running(Engine* engine) {
-    return engine->is_running;
+bool engine_is_running(Engine* engine) {
+    return engine->is_running == 1;
 }
 
-void engine_update(Engine* engine) {
-    if (window_manager_should_close(engine->window_manager)) {
-        engine->is_running = 0;
-        return;
+bool engine_update(Engine* engine) {
+    // Calculate delta time
+    ULONGLONG current_time = GetTickCount64();
+    float current_time_seconds = current_time / 1000.0f;
+    
+    engine->delta_time = current_time_seconds - engine->last_frame_time;
+    engine->last_frame_time = current_time_seconds;
+
+    // Update window and check if it should close
+    if (!window_manager_update(engine->window_manager)) {
+        engine->is_running = 0;  // Set is_running to 0 to exit the main loop
+        return false;
     }
 
     // TODO: Implement actual update logic
     // input_manager_update(engine->input_manager);
-    // particle_system_update(engine->particle_system);
 
-    window_manager_update(engine->window_manager);
+    // Update particle system
+    particle_system_update(engine->particle_system, engine->delta_time);
+
+    return true;
 }
 
 void engine_render(Engine* engine) {
-    (void)engine;  // Silence unused parameter warning
-    printf("Rendering frame...\n");
-    
     // Clear the screen
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // TODO: Implement actual rendering logic
+    // Render particle system
+    particle_system_render(engine->particle_system);
+
+    // Swap buffers
+    SwapBuffers(window_manager_get_dc(engine->window_manager));
 }
 
 void engine_shutdown(Engine* engine) {
@@ -84,6 +106,11 @@ void engine_shutdown(Engine* engine) {
         window_manager_shutdown(engine->window_manager);
     }
     // TODO: Shutdown other subsystems
+    
+    if (engine->particle_system) {
+        particle_system_destroy(engine->particle_system);
+        engine->particle_system = NULL;
+    }
 }
 
 void engine_destroy(Engine* engine) {

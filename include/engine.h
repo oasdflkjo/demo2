@@ -1,13 +1,15 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <stdbool.h>
+
 typedef struct Engine Engine;
 
 Engine* engine_create(void);
-int engine_initialize(Engine* engine);
-int engine_is_running(Engine* engine);
-void engine_update(Engine* engine);
+bool engine_initialize(Engine* engine);
+bool engine_update(Engine* engine);
 void engine_render(Engine* engine);
+bool engine_is_running(Engine* engine);
 void engine_shutdown(Engine* engine);
 void engine_destroy(Engine* engine);
 

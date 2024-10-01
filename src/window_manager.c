@@ -114,13 +114,17 @@ int window_manager_initialize(WindowManager* window_manager) {
     return 1;
 }
 
-void window_manager_update(WindowManager* window_manager) {
+bool window_manager_update(WindowManager* window_manager) {
     MSG msg;
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+    while (PeekMessage(&msg, window_manager->hwnd, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) {
+            g_should_close = 1;
+            return false;
+        }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    SwapBuffers(window_manager->hdc);
+    return !g_should_close;
 }
 
 void window_manager_shutdown(WindowManager* window_manager) {
@@ -147,4 +151,8 @@ int window_manager_should_close(WindowManager* window_manager) {
         DispatchMessage(&msg);
     }
     return g_should_close;
+}
+
+HDC window_manager_get_dc(WindowManager* window_manager) {
+    return window_manager->hdc;
 }

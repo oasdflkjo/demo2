@@ -1,40 +1,33 @@
 # Compiler settings
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -I$(INCLUDE_DIR)
-LDFLAGS = -lopengl32 -lgdi32
+CFLAGS = -Wall -Wextra -std=c11
+INCLUDES = -Iinclude
+LIBS = -lopengl32 -lgdi32
 
 # Directories
 SRC_DIR = src
 BUILD_DIR = build
-INCLUDE_DIR = include
+EXECUTABLE = game  # Changed from $(BUILD_DIR)/game to game
 
 # Source files
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-
-# Object files
-OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
-
-# Executable name
-EXEC = $(BUILD_DIR)/particle_system.exe
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
 # Default target
-all: $(BUILD_DIR) $(EXEC)
-
-# Create build directory
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+all: $(EXECUTABLE)
 
 # Link object files to create executable
-$(EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LIBS)
 
 # Compile source files into object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(EXECUTABLE)  # Updated to remove both build folder and executable
 
 # Phony targets
 .PHONY: all clean
