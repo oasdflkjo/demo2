@@ -1,10 +1,7 @@
 #include "engine.h"
 #include <stdio.h>
 
-int main(int argc, char* argv[]) {
-    (void)argc;  // Silence unused parameter warning
-    (void)argv;  // Silence unused parameter warning
-
+int main(void) {
     Engine* engine = engine_create();
     if (!engine) {
         fprintf(stderr, "Failed to create engine\n");
@@ -17,10 +14,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    while (engine_is_running(engine)) {
-        engine_update(engine);
-        engine_render(engine);
-    }
+    engine_run(engine);
 
     engine_shutdown(engine);
     engine_destroy(engine);

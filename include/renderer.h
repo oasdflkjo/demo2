@@ -1,6 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-typedef struct Renderer Renderer;
+int renderer_initialize(void);
+void renderer_render(void);
+void renderer_shutdown(void);
 
 #endif // RENDERER_H

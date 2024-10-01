@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <gl/gl.h>
 
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define WINDOW_TITLE "OpenGL Particle System"
@@ -99,21 +101,44 @@ int window_manager_initialize(WindowManager* window_manager) {
         return 0;
     }
 
-    window_manager->hrc = wglCreateContext(window_manager->hdc);
-    if (!window_manager->hrc) {
-        fprintf(stderr, "Failed to create OpenGL context\n");
+    // Create a temporary context
+    HGLRC tempContext = wglCreateContext(window_manager->hdc);
+    wglMakeCurrent(window_manager->hdc, tempContext);
+
+    // Load wglCreateContextAttribsARB function
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+
+    if (!wglCreateContextAttribsARB) {
+        fprintf(stderr, "Failed to get wglCreateContextAttribsARB function\n");
         return 0;
     }
 
-    if (!wglMakeCurrent(window_manager->hdc, window_manager->hrc)) {
-        fprintf(stderr, "Failed to make OpenGL context current\n");
-        return 0;
-    }
+    // Set attributes for OpenGL 3.3 core profile
+int attribs[] = {
+    WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+    WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+    0
+};
+
+    // Create OpenGL 3.3 core profile context
+    window_manager->hrc = wglCreateContextAttribsARB(window_manager->hdc, 0, attribs);
+
+    // Delete temporary context and make new context current
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(tempContext);
+    wglMakeCurrent(window_manager->hdc, window_manager->hrc);
 
     // Load modern OpenGL functions
     LoadOpenGLFunctions();
 
     ShowWindow(window_manager->hwnd, SW_SHOW);
+
+    // Print OpenGL version information
+    const GLubyte* version = glGetString(GL_VERSION);
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+    printf("OpenGL Version: %s\n", version);
+    printf("OpenGL Renderer: %s\n", renderer);
 
     return 1;
 }
@@ -159,4 +184,9 @@ int window_manager_should_close(WindowManager* window_manager) {
 
 HDC window_manager_get_dc(WindowManager* window_manager) {
     return window_manager->hdc;
+}
+
+// Add this function at the end of the file
+void window_manager_swap_buffers(WindowManager* window_manager) {
+    SwapBuffers(window_manager->hdc);
 }

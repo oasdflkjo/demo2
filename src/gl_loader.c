@@ -34,6 +34,12 @@ PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 PFNGLUNIFORM1IPROC glUniform1i;
 
+// Add these new function pointers
+PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers;
+PFNGLDELETEPROGRAMPROC glDeleteProgram;
+PFNGLDELETESHADERPROC glDeleteShader;
+
 void LoadOpenGLFunctions() {
     *(void **)(&glCreateShader) = wglGetProcAddress("glCreateShader");
     glShaderSource = (PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource");
@@ -65,6 +71,12 @@ void LoadOpenGLFunctions() {
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
     glUniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
+
+    // Load the new functions
+    *(void **)(&glDeleteVertexArrays) = wglGetProcAddress("glDeleteVertexArrays");
+    *(void **)(&glDeleteBuffers) = wglGetProcAddress("glDeleteBuffers");
+    *(void **)(&glDeleteProgram) = wglGetProcAddress("glDeleteProgram");
+    *(void **)(&glDeleteShader) = wglGetProcAddress("glDeleteShader");
 
     // Enable vsync
     PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");

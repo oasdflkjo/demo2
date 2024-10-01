@@ -14,5 +14,6 @@ void window_manager_destroy(WindowManager* window_manager);
 HWND window_manager_get_window(WindowManager* window_manager);
 int window_manager_should_close(WindowManager* window_manager);
 HDC window_manager_get_dc(WindowManager* window_manager);
+void window_manager_swap_buffers(WindowManager* window_manager);
 
 #endif // WINDOW_MANAGER_H

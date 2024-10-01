@@ -38,6 +38,14 @@ extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLUNIFORM1IPROC glUniform1i;
 
+// Add these new declarations
+extern PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
+extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
+extern PFNGLDELETEPROGRAMPROC glDeleteProgram;
+
+// Add this new declaration
+extern PFNGLDELETESHADERPROC glDeleteShader;
+
 void LoadOpenGLFunctions();
 
 #endif // GL_LOADER_H

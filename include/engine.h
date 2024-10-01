@@ -6,10 +6,8 @@
 typedef struct Engine Engine;
 
 Engine* engine_create(void);
-bool engine_initialize(Engine* engine);
-bool engine_update(Engine* engine);
-void engine_render(Engine* engine);
-bool engine_is_running(Engine* engine);
+int engine_initialize(Engine* engine);  // Changed from bool to int
+void engine_run(Engine* engine);
 void engine_shutdown(Engine* engine);
 void engine_destroy(Engine* engine);
 
