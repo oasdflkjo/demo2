@@ -1,4 +1,5 @@
 #include "window_manager.h"
+#include "gl_loader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <gl/gl.h>
@@ -108,6 +109,9 @@ int window_manager_initialize(WindowManager* window_manager) {
         fprintf(stderr, "Failed to make OpenGL context current\n");
         return 0;
     }
+
+    // Load modern OpenGL functions
+    LoadOpenGLFunctions();
 
     ShowWindow(window_manager->hwnd, SW_SHOW);
 
