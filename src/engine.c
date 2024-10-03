@@ -3,16 +3,20 @@
 #include "renderer.h"
 #include "input_manager.h"
 #include "particle_system.h"
+#include "gl_loader.h"  // Add this line to include OpenGL function declarations
 #include <stdlib.h>
+#include <time.h>
 
 struct Engine {
     WindowManager* window_manager;
+    ParticleSystem* particle_system;
 };
 
 Engine* engine_create(void) {
     Engine* engine = malloc(sizeof(Engine));
     if (engine) {
         engine->window_manager = window_manager_create();
+        engine->particle_system = NULL;
     }
     return engine;
 }
@@ -26,32 +30,40 @@ int engine_initialize(Engine* engine) {
         return 0;
     }
 
-    // Initialize other systems as needed
-    // input_manager_initialize();
-    // particle_system_initialize();
+    // Initialize particle system
+    srand(time(NULL));  // Seed random number generator
+    engine->particle_system = particle_system_create(10000);  // Create 10,000 particles
+    if (!engine->particle_system) {
+        return 0;
+    }
 
     return 1;
 }
 
 void engine_run(Engine* engine) {
+    float last_time = 0;
     while (!window_manager_should_close(engine->window_manager)) {
-        // Update game logic
-        // input_manager_update();
-        // particle_system_update();
+        float current_time = (float)clock() / CLOCKS_PER_SEC;
+        float delta_time = current_time - last_time;
+        last_time = current_time;
 
-        // Render frame
-        renderer_render();
+        // Update particle system
+        particle_system_update(engine->particle_system, delta_time);
+
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Render particle system
+        particle_system_render(engine->particle_system);
 
         // Swap buffers
-        SwapBuffers(window_manager_get_dc(engine->window_manager));
+        window_manager_swap_buffers(engine->window_manager);
     }
 }
 
 void engine_shutdown(Engine* engine) {
     renderer_shutdown();
-    // Shutdown other systems
-    // input_manager_shutdown();
-    // particle_system_shutdown();
+    particle_system_destroy(engine->particle_system);
     window_manager_shutdown(engine->window_manager);
 }
 

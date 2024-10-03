@@ -2,27 +2,22 @@
 #include "gl_loader.h"
 #include "shader_manager.h"
 #include <stdio.h>
+#include <windows.h>  // Add this include for Windows-specific functions
 
 static GLuint vao, vbo;
 static GLuint shader_program;
 
-const char* vertex_shader_source = 
-    "#version 330 core\n"
-    "layout (location = 0) in vec2 aPos;\n"
-    "void main() {\n"
-    "    gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
-    "}\0";
-
-const char* fragment_shader_source = 
-    "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main() {\n"
-    "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
-    "}\0";
-
 int renderer_initialize(void) {
-    shader_program = create_program(vertex_shader_source, fragment_shader_source);
+    shader_program = create_program("shaders/basic.vert", "shaders/basic.frag");
     if (!shader_program) {
+        fprintf(stderr, "Failed to create shader program in renderer\n");
+        // Print current working directory
+        char cwd[MAX_PATH];
+        if (GetCurrentDirectoryA(sizeof(cwd), cwd) != 0) {
+            fprintf(stderr, "Current working directory: %s\n", cwd);
+        } else {
+            fprintf(stderr, "Failed to get current working directory\n");
+        }
         return 0;
     }
 

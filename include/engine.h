@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #include <stdbool.h>
+#include "gl_loader.h"  // Add this line to include OpenGL function declarations
 
 typedef struct Engine Engine;
 
