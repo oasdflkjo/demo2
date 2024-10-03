@@ -7,11 +7,15 @@ LIBS = -lopengl32 -lgdi32
 # Directories
 SRC_DIR = src
 BUILD_DIR = build
-EXECUTABLE = game  # Changed from $(BUILD_DIR)/game to game
+EXECUTABLE = game
 
 # Source files
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
+
+# Determine the number of CPU cores for parallel compilation
+NPROCS = $(shell nproc)
+MAKEFLAGS += -j$(NPROCS)
 
 # Default target
 all: $(EXECUTABLE)
@@ -27,7 +31,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean up build files
 clean:
-	rm -rf $(BUILD_DIR) $(EXECUTABLE)  # Updated to remove both build folder and executable
+	rm -rf $(BUILD_DIR) $(EXECUTABLE)
 
 # Phony targets
 .PHONY: all clean

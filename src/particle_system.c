@@ -1,12 +1,14 @@
 #include "particle_system.h"
 #include "gl_loader.h"
 #include "shader_manager.h"
+#include "window_manager.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+// Remove these defines
+// #define WINDOW_WIDTH 800
+// #define WINDOW_HEIGHT 600
 
 struct ParticleSystem {
     Particle* particles;
@@ -14,18 +16,23 @@ struct ParticleSystem {
     int active_particles;
     GLuint vao, vbo;
     GLuint shader_program;
+    WindowManager* window_manager;  // Add this line
 };
 
-ParticleSystem* particle_system_create(int max_particles) {
+ParticleSystem* particle_system_create(int max_particles, WindowManager* window_manager) {
     ParticleSystem* ps = (ParticleSystem*)malloc(sizeof(ParticleSystem));
     if (ps) {
         ps->particles = (Particle*)malloc(sizeof(Particle) * max_particles);
         ps->max_particles = max_particles;
-        ps->active_particles = max_particles;  // Start with all particles active
+        ps->active_particles = max_particles;
+        ps->window_manager = window_manager;  // Add this line
         
+        int width = window_manager_get_width(window_manager);
+        int height = window_manager_get_height(window_manager);
+
         for (int i = 0; i < max_particles; i++) {
-            ps->particles[i].x = (float)(rand() % WINDOW_WIDTH) / WINDOW_WIDTH * 2 - 1;
-            ps->particles[i].y = (float)(rand() % WINDOW_HEIGHT) / WINDOW_HEIGHT * 2 - 1;
+            ps->particles[i].x = (float)(rand() % width) / width * 2 - 1;
+            ps->particles[i].y = (float)(rand() % height) / height * 2 - 1;
             ps->particles[i].vx = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
             ps->particles[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
             ps->particles[i].r = (float)rand() / RAND_MAX;
@@ -65,7 +72,14 @@ ParticleSystem* particle_system_create(int max_particles) {
     return ps;
 }
 
-void particle_system_update(ParticleSystem* ps, float delta_time) {
+void particle_system_update(ParticleSystem* ps, float delta_time, int mouse_x, int mouse_y) {
+    int width = window_manager_get_width(ps->window_manager);
+    int height = window_manager_get_height(ps->window_manager);
+
+    // Convert mouse coordinates to OpenGL coordinate system
+    float mouse_gl_x = (float)mouse_x / (width / 2) - 1.0f;
+    float mouse_gl_y = -((float)mouse_y / (height / 2) - 1.0f);  // Invert Y-axis
+
     for (int i = 0; i < ps->max_particles; i++) {
         Particle* p = &ps->particles[i];
         
@@ -75,8 +89,8 @@ void particle_system_update(ParticleSystem* ps, float delta_time) {
 
         // Reset particle if it's dead or out of bounds
         if (p->lifetime <= 0 || fabs(p->x) > 1 || fabs(p->y) > 1) {
-            p->x = (float)(rand() % WINDOW_WIDTH) / WINDOW_WIDTH * 2 - 1;
-            p->y = (float)(rand() % WINDOW_HEIGHT) / WINDOW_HEIGHT * 2 - 1;
+            p->x = mouse_gl_x;
+            p->y = mouse_gl_y;
             p->vx = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
             p->vy = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
             p->lifetime = (float)rand() / RAND_MAX * 5.0f;

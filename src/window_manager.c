@@ -3,17 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gl/gl.h>
+#include <windows.h>
 
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
 #define WINDOW_TITLE "OpenGL Particle System"
 
 struct WindowManager {
     HWND hwnd;
     HDC hdc;
     HGLRC hrc;
+    int width;
+    int height;
 };
 
 static int g_should_close = 0;
@@ -36,6 +37,8 @@ WindowManager* window_manager_create(void) {
         manager->hwnd = NULL;
         manager->hdc = NULL;
         manager->hrc = NULL;
+        manager->width = 0;
+        manager->height = 0;
     }
     return manager;
 }
@@ -51,13 +54,27 @@ int window_manager_initialize(WindowManager* window_manager) {
         return 0;
     }
 
+    // Get the primary monitor's dimensions
+    HMONITOR hmon = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    MONITORINFO mi = { 
+        .cbSize = sizeof(mi),
+        .rcMonitor = {0}
+    };
+    if (!GetMonitorInfo(hmon, &mi)) {
+        fprintf(stderr, "Failed to get monitor info\n");
+        return 0;
+    }
+
+    int width = mi.rcMonitor.right - mi.rcMonitor.left;
+    int height = mi.rcMonitor.bottom - mi.rcMonitor.top;
+
+    // Create a borderless window that covers the entire screen
     window_manager->hwnd = CreateWindowExA(
         0,
         "OpenGLWindow",
         WINDOW_TITLE,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        WINDOW_WIDTH, WINDOW_HEIGHT,
+        WS_POPUP | WS_VISIBLE,  // Borderless fullscreen
+        mi.rcMonitor.left, mi.rcMonitor.top, width, height,
         NULL,
         NULL,
         GetModuleHandle(NULL),
@@ -70,6 +87,8 @@ int window_manager_initialize(WindowManager* window_manager) {
     }
 
     window_manager->hdc = GetDC(window_manager->hwnd);
+    window_manager->width = width;
+    window_manager->height = height;
 
     PIXELFORMATDESCRIPTOR pfd = {
         sizeof(PIXELFORMATDESCRIPTOR),
@@ -113,15 +132,15 @@ int window_manager_initialize(WindowManager* window_manager) {
         return 0;
     }
 
-    // Set attributes for OpenGL 3.3 core profile
-int attribs[] = {
-    WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-    WGL_CONTEXT_MINOR_VERSION_ARB, 6,
-    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-    0
-};
+    // Set attributes for OpenGL 4.6 core profile
+    int attribs[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+        WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+        0
+    };
 
-    // Create OpenGL 3.3 core profile context
+    // Create OpenGL 4.6 core profile context
     window_manager->hrc = wglCreateContextAttribsARB(window_manager->hdc, 0, attribs);
 
     // Delete temporary context and make new context current
@@ -139,6 +158,8 @@ int attribs[] = {
     const GLubyte* renderer = glGetString(GL_RENDERER);
     printf("OpenGL Version: %s\n", version);
     printf("OpenGL Renderer: %s\n", renderer);
+
+    window_manager_hide_cursor(window_manager);
 
     return 1;
 }
@@ -189,4 +210,18 @@ HDC window_manager_get_dc(WindowManager* window_manager) {
 // Add this function at the end of the file
 void window_manager_swap_buffers(WindowManager* window_manager) {
     SwapBuffers(window_manager->hdc);
+}
+
+int window_manager_get_width(WindowManager* window_manager) {
+    return window_manager->width;
+}
+
+int window_manager_get_height(WindowManager* window_manager) {
+    return window_manager->height;
+}
+
+// Add this function
+void window_manager_hide_cursor(WindowManager* window_manager) {
+    (void)window_manager;  // Suppress unused parameter warning
+    ShowCursor(FALSE);
 }
