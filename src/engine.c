@@ -41,7 +41,7 @@ int engine_initialize(Engine* engine) {
 
     // Initialize particle system
     srand(time(NULL));  // Seed random number generator
-    engine->particle_system = particle_system_create(10000, engine->window_manager);  // Create 10,000 particles
+    engine->particle_system = particle_system_create(100000, engine->window_manager);  // Create 10,000 particles
     if (!engine->particle_system) {
         return 0;
     }

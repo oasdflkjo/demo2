@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <math.h>
 
+// Define M_PI if it's not already defined
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 // Remove these defines
 // #define WINDOW_WIDTH 800
 // #define WINDOW_HEIGHT 600
@@ -29,12 +34,19 @@ ParticleSystem* particle_system_create(int max_particles, WindowManager* window_
         
         int width = window_manager_get_width(window_manager);
         int height = window_manager_get_height(window_manager);
+        float aspect_ratio = (float)width / height;
 
         for (int i = 0; i < max_particles; i++) {
-            ps->particles[i].x = (float)(rand() % width) / width * 2 - 1;
-            ps->particles[i].y = (float)(rand() % height) / height * 2 - 1;
-            ps->particles[i].vx = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
-            ps->particles[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
+            float angle = ((float)rand() / RAND_MAX) * 2 * M_PI;
+            float radius = sqrt((float)rand() / RAND_MAX) * 0.5f;
+            
+            ps->particles[i].x = cos(angle) * radius / aspect_ratio;
+            ps->particles[i].y = sin(angle) * radius;
+            
+            float speed = ((float)rand() / RAND_MAX) * 0.02f;
+            ps->particles[i].vx = cos(angle) * speed / aspect_ratio;
+            ps->particles[i].vy = sin(angle) * speed;
+            
             ps->particles[i].r = (float)rand() / RAND_MAX;
             ps->particles[i].g = (float)rand() / RAND_MAX;
             ps->particles[i].b = (float)rand() / RAND_MAX;
@@ -75,6 +87,7 @@ ParticleSystem* particle_system_create(int max_particles, WindowManager* window_
 void particle_system_update(ParticleSystem* ps, float delta_time, int mouse_x, int mouse_y) {
     int width = window_manager_get_width(ps->window_manager);
     int height = window_manager_get_height(ps->window_manager);
+    float aspect_ratio = (float)width / height;
 
     // Convert mouse coordinates to OpenGL coordinate system
     float mouse_gl_x = (float)mouse_x / (width / 2) - 1.0f;
@@ -87,12 +100,21 @@ void particle_system_update(ParticleSystem* ps, float delta_time, int mouse_x, i
         p->y += p->vy * delta_time;
         p->lifetime -= delta_time;
 
-        // Reset particle if it's dead or out of bounds
-        if (p->lifetime <= 0 || fabs(p->x) > 1 || fabs(p->y) > 1) {
-            p->x = mouse_gl_x;
-            p->y = mouse_gl_y;
-            p->vx = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
-            p->vy = ((float)rand() / RAND_MAX - 0.5f) * 0.02f;
+        // Calculate distance from center, taking aspect ratio into account
+        float dist = sqrt((p->x * aspect_ratio) * (p->x * aspect_ratio) + p->y * p->y);
+
+        // Reset particle if it's dead or too far from center
+        if (p->lifetime <= 0 || dist > 1.0f) {
+            float angle = ((float)rand() / RAND_MAX) * 2 * M_PI;
+            float radius = sqrt((float)rand() / RAND_MAX) * 0.1f; // Small initial radius
+            
+            p->x = mouse_gl_x + cos(angle) * radius / aspect_ratio;
+            p->y = mouse_gl_y + sin(angle) * radius;
+            
+            float speed = ((float)rand() / RAND_MAX) * 0.02f;
+            p->vx = cos(angle) * speed / aspect_ratio;
+            p->vy = sin(angle) * speed;
+            
             p->lifetime = (float)rand() / RAND_MAX * 5.0f;
         }
     }
