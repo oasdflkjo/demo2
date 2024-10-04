@@ -3,8 +3,6 @@
 struct Particle {
     vec2 position;
     vec2 velocity;
-    vec3 color;
-    float mass;
 };
 
 layout(std430, binding = 0) buffer ParticleBuffer {
@@ -17,11 +15,9 @@ uniform float aspect_ratio;
 
 layout(local_size_x = 256) in;
 
-const float GRAVITY = 9.8;
-const float DRAG_COEFFICIENT = 0.47;
-const float AIR_DENSITY = 1.225;
-const float MAX_DISTANCE = 0.1;
-const float EPSILON = 0.0001;
+const float GRAVITY = 0.5;
+const float RESISTANCE = 0.99;
+const float ATTRACTION_STRENGTH = 2.0;
 
 void main() {
     uint gid = gl_GlobalInvocationID.x;
@@ -33,35 +29,25 @@ void main() {
     // Calculate direction to mouse
     vec2 to_mouse = mouse_pos - p.position;
     to_mouse.x *= aspect_ratio; // Adjust for aspect ratio
-    float distance = max(length(to_mouse), EPSILON); // Avoid division by zero
+    float distance = length(to_mouse);
     
-    // Apply force towards mouse
-    float force_magnitude = 0.5 / (distance + 0.1);
-    vec2 force = normalize(to_mouse) * force_magnitude;
+    // Apply attraction to mouse
+    vec2 attraction = normalize(to_mouse) * ATTRACTION_STRENGTH / (distance + 1.0);
     
     // Apply gravity
-    force.y -= GRAVITY * p.mass * 0.01;
-    
-    // Apply drag force
-    float speed = length(p.velocity);
-    float drag_force = 0.5 * DRAG_COEFFICIENT * AIR_DENSITY * speed * speed * 0.1;
-    vec2 drag = speed > EPSILON ? -normalize(p.velocity) * drag_force : vec2(0.0);
+    vec2 gravity = vec2(0.0, -GRAVITY);
     
     // Update velocity
-    p.velocity += (force + drag) / max(p.mass, EPSILON) * delta_time;
+    p.velocity += (attraction + gravity) * delta_time;
+    
+    // Apply resistance
+    p.velocity *= RESISTANCE;
     
     // Update position
     p.position += p.velocity * delta_time;
     
-    // Instead of clamping, wrap particles around the screen
-    p.position = fract(p.position * 0.5 + 0.5) * 2.0 - 1.0;
-    
-    // Debug: Color particles based on their position
-    p.color = vec3(
-        (p.position.x + 1.0) * 0.5,
-        (p.position.y + 1.0) * 0.5,
-        0.5
-    );
+    // Wrap particles around the screen
+    p.position = mod(p.position + 1.0, 2.0) - 1.0;
     
     particles[gid] = p;
 }

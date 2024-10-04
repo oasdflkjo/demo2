@@ -7,8 +7,6 @@
 typedef struct {
     float x, y;        // Position
     float vx, vy;      // Velocity
-    float r, g, b;     // Color
-    float mass;        // Mass of the particle
 } Particle;
 
 typedef struct ParticleSystem ParticleSystem;

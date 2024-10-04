@@ -39,10 +39,6 @@ ParticleSystem* particle_system_create(int max_particles, WindowManager* window_
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)0);
         glEnableVertexAttribArray(0);
 
-        // Color attribute
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)(4 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
@@ -52,28 +48,20 @@ ParticleSystem* particle_system_create(int max_particles, WindowManager* window_
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Particle) * max_particles, NULL, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        // Initialize particles in a sphere around the center (cursor position)
+        // Initialize particles
         Particle* particles = (Particle*)malloc(sizeof(Particle) * max_particles);
         for (int i = 0; i < max_particles; i++) {
-            float theta = ((float)rand() / RAND_MAX) * 2 * M_PI;
-            float phi = acos(2 * ((float)rand() / RAND_MAX) - 1);
-            float r = pow((float)rand() / RAND_MAX, 1.0f/3.0f) * 0.1f; // Radius of 0.1
-
-            particles[i].x = r * sin(phi) * cos(theta);
-            particles[i].y = r * sin(phi) * sin(theta);
-            particles[i].vx = 0;
-            particles[i].vy = 0;
-            particles[i].r = (float)rand() / RAND_MAX;
-            particles[i].g = (float)rand() / RAND_MAX;
-            particles[i].b = (float)rand() / RAND_MAX;
-            particles[i].mass = ((float)rand() / RAND_MAX) * 0.1f + 0.1f;
+            particles[i].x = ((float)rand() / RAND_MAX) * 2 - 1;  // Range: -1 to 1
+            particles[i].y = ((float)rand() / RAND_MAX) * 2 - 1;  // Range: -1 to 1
+            particles[i].vx = ((float)rand() / RAND_MAX) * 0.1f - 0.05f;  // Small initial velocity
+            particles[i].vy = ((float)rand() / RAND_MAX) * 0.1f - 0.05f;  // Small initial velocity
         }
 
         // Print debug information for the first few particles
         printf("First 5 particles:\n");
         for (int i = 0; i < 5 && i < max_particles; i++) {
-            printf("Particle %d: pos(%.2f, %.2f), color(%.2f, %.2f, %.2f)\n",
-                   i, particles[i].x, particles[i].y, particles[i].r, particles[i].g, particles[i].b);
+            printf("Particle %d: pos(%.2f, %.2f), vel(%.2f, %.2f)\n",
+                   i, particles[i].x, particles[i].y, particles[i].vx, particles[i].vy);
         }
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->ssbo);
@@ -137,11 +125,11 @@ void particle_system_render(ParticleSystem* ps) {
     // Bind SSBO to the VAO
     glBindBuffer(GL_ARRAY_BUFFER, ps->ssbo);
     
-    // Update attribute pointers
+    // Update attribute pointers (only position now)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)(4 * sizeof(float)));
+    glEnableVertexAttribArray(0);
     
-    glPointSize(5.0f);  // Increase point size to make particles more visible
+    glPointSize(2.0f);
     glDrawArrays(GL_POINTS, 0, ps->max_particles);
     
     // Print debug information
@@ -156,9 +144,8 @@ void particle_system_render(ParticleSystem* ps) {
     if (particles) {
         printf("First 5 particles after update:\n");
         for (int i = 0; i < 5 && i < ps->max_particles; i++) {
-            printf("Particle %d: pos(%.2f, %.2f), vel(%.2f, %.2f), color(%.2f, %.2f, %.2f), mass=%.2f\n",
-                   i, particles[i].x, particles[i].y, particles[i].vx, particles[i].vy,
-                   particles[i].r, particles[i].g, particles[i].b, particles[i].mass);
+            printf("Particle %d: pos(%.2f, %.2f), vel(%.2f, %.2f)\n",
+                   i, particles[i].x, particles[i].y, particles[i].vx, particles[i].vy);
         }
         glUnmapBuffer(GL_ARRAY_BUFFER);
     } else {
