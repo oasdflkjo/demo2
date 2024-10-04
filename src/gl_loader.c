@@ -40,6 +40,19 @@ PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 PFNGLDELETEPROGRAMPROC glDeleteProgram;
 PFNGLDELETESHADERPROC glDeleteShader;
 
+// Add these new function pointer definitions
+PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
+PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
+PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
+PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
+PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
+PFNGLDELETERENDERBUFFERSPROC glDeleteRenderbuffers;
+PFNGLACTIVETEXTUREPROC glActiveTexture;
+
 void LoadOpenGLFunctions() {
     *(void **)(&glCreateShader) = wglGetProcAddress("glCreateShader");
     glShaderSource = (PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource");
@@ -77,6 +90,19 @@ void LoadOpenGLFunctions() {
     *(void **)(&glDeleteBuffers) = wglGetProcAddress("glDeleteBuffers");
     *(void **)(&glDeleteProgram) = wglGetProcAddress("glDeleteProgram");
     *(void **)(&glDeleteShader) = wglGetProcAddress("glDeleteShader");
+
+    // Add these new function pointer assignments
+    glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
+    glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
+    glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
+    glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatus");
+    glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
+    glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
+    glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
+    glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
+    glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
+    glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
+    glActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture");
 
     // Enable vsync
     PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");

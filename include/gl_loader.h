@@ -42,6 +42,19 @@ extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 extern PFNGLDELETEPROGRAMPROC glDeleteProgram;
 extern PFNGLDELETESHADERPROC glDeleteShader;
 
+// Add these new function pointer declarations
+extern PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
+extern PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+extern PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
+extern PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
+extern PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
+extern PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
+extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
+extern PFNGLDELETERENDERBUFFERSPROC glDeleteRenderbuffers;
+extern PFNGLACTIVETEXTUREPROC glActiveTexture;
+
 void LoadOpenGLFunctions();
 
 #endif // GL_LOADER_H

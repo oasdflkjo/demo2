@@ -80,6 +80,9 @@ void engine_run(Engine* engine) {
         printf("Mouse position: screen(%d, %d), GL(%.2f, %.2f)\n", 
                mouse_pos.x, mouse_pos.y, mouse_gl_x, mouse_gl_y);
 
+        // Start rendering to the framebuffer
+        renderer_start_frame();
+
         // Clear the screen with a dark color
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -92,6 +95,9 @@ void engine_run(Engine* engine) {
 
         // Render custom cursor
         renderer_render_cursor(mouse_gl_x, mouse_gl_y);
+
+        // End rendering to the framebuffer and apply glitch effect
+        renderer_end_frame();
 
         // Swap buffers
         window_manager_swap_buffers(engine->window_manager);
