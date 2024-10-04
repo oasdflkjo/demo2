@@ -94,3 +94,43 @@ GLuint create_program(const char* vertex_file, const char* fragment_file) {
 
     return program;
 }
+
+// Add this function to create compute shaders
+GLuint create_compute_shader(const char* compute_file) {
+    char* compute_source = read_file(compute_file);
+    if (!compute_source) {
+        return 0;
+    }
+
+    GLuint compute_shader = glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(compute_shader, 1, (const GLchar**)&compute_source, NULL);
+    glCompileShader(compute_shader);
+
+    GLint success;
+    glGetShaderiv(compute_shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(compute_shader, 512, NULL, infoLog);
+        fprintf(stderr, "Compute shader compilation failed: %s\n", infoLog);
+        free(compute_source);
+        return 0;
+    }
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, compute_shader);
+    glLinkProgram(program);
+
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        fprintf(stderr, "Compute shader program linking failed: %s\n", infoLog);
+        free(compute_source);
+        return 0;
+    }
+
+    glDeleteShader(compute_shader);
+    free(compute_source);
+
+    return program;
+}

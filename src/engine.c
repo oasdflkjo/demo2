@@ -6,6 +6,7 @@
 #include "gl_loader.h"
 #include <stdlib.h>
 #include <time.h>
+#include <stdio.h>  // Add this line
 
 struct Engine {
     WindowManager* window_manager;
@@ -43,8 +44,10 @@ int engine_initialize(Engine* engine) {
     srand(time(NULL));  // Seed random number generator
     engine->particle_system = particle_system_create(100000, engine->window_manager);  // Create 10,000 particles
     if (!engine->particle_system) {
+        fprintf(stderr, "Failed to create particle system\n");
         return 0;
     }
+    printf("Particle system created successfully\n");
 
     return 1;
 }
@@ -68,14 +71,21 @@ void engine_run(Engine* engine) {
         MousePosition mouse_pos = input_manager_get_mouse_position(engine->input_manager);
 
         // Convert mouse coordinates to OpenGL coordinate system
-        float mouse_gl_x = (float)mouse_pos.x / window_manager_get_width(engine->window_manager) * 2 - 1;
-        float mouse_gl_y = 1 - (float)mouse_pos.y / window_manager_get_height(engine->window_manager) * 2;
+        int width = window_manager_get_width(engine->window_manager);
+        int height = window_manager_get_height(engine->window_manager);
+        float mouse_gl_x = (float)mouse_pos.x / width * 2 - 1;
+        float mouse_gl_y = 1 - (float)mouse_pos.y / height * 2;
+
+        // Print debug information for mouse position
+        printf("Mouse position: screen(%d, %d), GL(%.2f, %.2f)\n", 
+               mouse_pos.x, mouse_pos.y, mouse_gl_x, mouse_gl_y);
+
+        // Clear the screen with a dark color
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         // Update particle system
-        particle_system_update(engine->particle_system, delta_time, mouse_pos.x, mouse_pos.y);
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT);
+        particle_system_update(engine->particle_system, delta_time, mouse_gl_x, mouse_gl_y);
 
         // Render particle system
         particle_system_render(engine->particle_system);
