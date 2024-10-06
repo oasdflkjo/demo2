@@ -16,7 +16,7 @@ void main()
     
     // Time-based glitch effect
     float glitchStrength = 0.05;
-    float glitchFrequency = 5.0;
+    float glitchFrequency = 10.0;
     float t = floor(time * glitchFrequency);
     
     // Horizontal glitch
@@ -30,9 +30,9 @@ void main()
     }
     
     // Color shift
-    vec2 redOffset = vec2(random(vec2(t, 2.0)) - 0.5, random(vec2(t, 3.0)) - 0.5) * 0.01;
-    vec2 greenOffset = vec2(random(vec2(t, 4.0)) - 0.5, random(vec2(t, 5.0)) - 0.5) * 0.01;
-    vec2 blueOffset = vec2(random(vec2(t, 6.0)) - 0.5, random(vec2(t, 7.0)) - 0.5) * 0.01;
+    vec2 redOffset = vec2(random(vec2(t, 2.0)) - 0.5, random(vec2(t, 3.0)) - 0.5) * 0.02;
+    vec2 greenOffset = vec2(random(vec2(t, 4.0)) - 0.5, random(vec2(t, 5.0)) - 0.5) * 0.02;
+    vec2 blueOffset = vec2(random(vec2(t, 6.0)) - 0.5, random(vec2(t, 7.0)) - 0.5) * 0.02;
     
     vec4 color;
     color.r = texture(screenTexture, uv + redOffset).r;
@@ -41,7 +41,7 @@ void main()
     color.a = 1.0;
     
     // Scanline effect
-    float scanline = sin(uv.y * 800.0) * 0.02;
+    float scanline = sin(uv.y * 800.0) * 0.06;
     color.rgb += vec3(scanline);
     
     FragColor = color;

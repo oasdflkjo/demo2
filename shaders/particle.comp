@@ -15,9 +15,9 @@ uniform float aspect_ratio;
 
 layout(local_size_x = 256) in;
 
-const float GRAVITY = 0.5;
+const float GRAVITY = 0.05;
 const float RESISTANCE = 0.99;
-const float ATTRACTION_STRENGTH = 2.0;
+const float ATTRACTION_STRENGTH = 5.0;
 
 void main() {
     uint gid = gl_GlobalInvocationID.x;

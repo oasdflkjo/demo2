@@ -12,12 +12,12 @@ static GLuint glitch_shader_program;
 static LARGE_INTEGER start_time, frequency;
 
 void renderer_init_cursor(void);
-void renderer_init_framebuffer(void);
+void renderer_init_framebuffer(int width, int height);
 void renderer_init_fullscreen_quad(void);
 
-int renderer_initialize(void) {
+int renderer_initialize(int width, int height) {
     renderer_init_cursor();
-    renderer_init_framebuffer();
+    renderer_init_framebuffer(width, height);
     renderer_init_fullscreen_quad();
 
     glitch_shader_program = create_program("shaders/fullscreen_quad.vert", "shaders/glitch.frag");
@@ -123,26 +123,26 @@ void renderer_render_cursor(float x, float y) {
     glUseProgram(0);
 }
 
-void renderer_init_framebuffer(void) {
+void renderer_init_framebuffer(int width, int height) {
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     glGenTextures(1, &screen_texture);
     glBindTexture(GL_TEXTURE_2D, screen_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_texture, 0);
 
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         printf("Framebuffer is not complete!\n");
     } else {
-        printf("Framebuffer created successfully\n");
+        printf("Framebuffer created successfully with dimensions %dx%d\n", width, height);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

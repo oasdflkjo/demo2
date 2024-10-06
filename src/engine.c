@@ -36,7 +36,11 @@ int engine_initialize(Engine* engine) {
         return 0;
     }
 
-    if (!renderer_initialize()) {
+    int width = window_manager_get_width(engine->window_manager);
+    int height = window_manager_get_height(engine->window_manager);
+
+    if (!renderer_initialize(width, height)) {
+        // Handle initialization failure
         return 0;
     }
 
