@@ -46,7 +46,7 @@ int engine_initialize(Engine* engine) {
 
     // Initialize particle system
     srand(time(NULL));  // Seed random number generator
-    engine->particle_system = particle_system_create(100000, engine->window_manager);  // Create 10,000 particles
+    engine->particle_system = particle_system_create(100000, width, height);  // Create 100,000 particles
     if (!engine->particle_system) {
         fprintf(stderr, "Failed to create particle system\n");
         return 0;
@@ -95,7 +95,7 @@ void engine_run(Engine* engine) {
         particle_system_update(engine->particle_system, delta_time, mouse_gl_x, mouse_gl_y);
 
         // Render particle system
-        particle_system_render(engine->particle_system);
+        renderer_render_particles(engine->particle_system);
 
         // Render custom cursor
         renderer_render_cursor(mouse_gl_x, mouse_gl_y);

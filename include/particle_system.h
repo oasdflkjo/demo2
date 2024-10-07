@@ -2,7 +2,7 @@
 #define PARTICLE_SYSTEM_H
 
 #include <stdbool.h>
-#include "window_manager.h"  // Add this include
+#include "gl_loader.h"
 
 typedef struct {
     float x, y;        // Position
@@ -11,9 +11,10 @@ typedef struct {
 
 typedef struct ParticleSystem ParticleSystem;
 
-ParticleSystem* particle_system_create(int max_particles, WindowManager* window_manager);
+ParticleSystem* particle_system_create(int max_particles, int width, int height);
 void particle_system_update(ParticleSystem* ps, float delta_time, float mouse_x, float mouse_y);
-void particle_system_render(ParticleSystem* ps);
+GLuint particle_system_get_ssbo(ParticleSystem* ps);
+int particle_system_get_max_particles(ParticleSystem* ps);
 void particle_system_destroy(ParticleSystem* ps);
 
 #endif // PARTICLE_SYSTEM_H

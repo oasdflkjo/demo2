@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include "gl_loader.h"
 #include "shader_manager.h"
+#include "particle_system.h"
 #include <stdio.h>
 #include <windows.h>
 
@@ -10,10 +11,13 @@ static GLuint fbo, rbo, screen_texture;
 static GLuint quad_vao, quad_vbo;
 static GLuint glitch_shader_program;
 static LARGE_INTEGER start_time, frequency;
+static GLuint particle_vao;
+static GLuint particle_render_shader;
 
 void renderer_init_cursor(void);
 void renderer_init_framebuffer(int width, int height);
 void renderer_init_fullscreen_quad(void);
+void renderer_render_particles(ParticleSystem* ps);
 
 int renderer_initialize(int width, int height) {
     renderer_init_cursor();
@@ -26,6 +30,18 @@ int renderer_initialize(int width, int height) {
         return 0;
     }
     printf("Glitch shader program created successfully: %u\n", glitch_shader_program);
+
+    // Initialize particle rendering
+    glGenVertexArrays(1, &particle_vao);
+    glBindVertexArray(particle_vao);
+    glBindVertexArray(0);
+
+    // Load particle render shader
+    particle_render_shader = create_program("shaders/particle.vert", "shaders/particle.frag");
+    if (!particle_render_shader) {
+        fprintf(stderr, "Failed to create render shader for particle system\n");
+        return 0;
+    }
 
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_time);
@@ -84,6 +100,9 @@ void renderer_shutdown(void) {
     glDeleteVertexArrays(1, &quad_vao);
     glDeleteBuffers(1, &quad_vbo);
     glDeleteProgram(glitch_shader_program);
+
+    glDeleteVertexArrays(1, &particle_vao);
+    glDeleteProgram(particle_render_shader);
 }
 
 void renderer_init_cursor(void) {
@@ -201,6 +220,26 @@ void renderer_end_frame(void) {
         printf("OpenGL error in renderer_end_frame: %d\n", error);
     }
 
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+void renderer_render_particles(ParticleSystem* ps) {
+    glUseProgram(particle_render_shader);
+    glBindVertexArray(particle_vao);
+    
+    // Bind SSBO to the VAO
+    GLuint ssbo = particle_system_get_ssbo(ps);
+    glBindBuffer(GL_ARRAY_BUFFER, ssbo);
+    
+    // Update attribute pointers (only position now)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    glPointSize(2.0f);
+    glDrawArrays(GL_POINTS, 0, particle_system_get_max_particles(ps));
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glUseProgram(0);
 }
