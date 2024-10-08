@@ -101,6 +101,8 @@ WindowManager *window_manager_create(void)
 
 int window_manager_initialize(WindowManager *wm)
 {
+    SetProcessDPIAware();
+
     WNDCLASSA wc = {
         .lpfnWndProc = WindowProc,
         .hInstance = GetModuleHandle(NULL),

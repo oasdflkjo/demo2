@@ -49,44 +49,6 @@ int renderer_initialize(int width, int height) {
     return 1;
 }
 
-void renderer_render(void) {
-    // Bind framebuffer and render scene
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Render your scene here (particles, cursor, etc.)
-    renderer_render_cursor(0.0f, 0.0f); // Example cursor position
-
-    // Unbind framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Render full-screen quad with glitch effect
-    glUseProgram(glitch_shader_program);
-    glBindVertexArray(quad_vao);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, screen_texture);
-    glUniform1i(glGetUniformLocation(glitch_shader_program, "screenTexture"), 0);
-
-    LARGE_INTEGER current_time;
-    QueryPerformanceCounter(&current_time);
-    float elapsed_time = (float)(current_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
-    GLint timeLocation = glGetUniformLocation(glitch_shader_program, "time");
-    glUniform1f(timeLocation, elapsed_time);
-
-    printf("Rendering with glitch shader. Time: %f\n", elapsed_time);
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        printf("OpenGL error in renderer_render: %d\n", error);
-    }
-
-    glBindVertexArray(0);
-    glUseProgram(0);
-}
 
 void renderer_shutdown(void) {
     glDeleteVertexArrays(1, &cursor_vao);
@@ -210,8 +172,6 @@ void renderer_end_frame(void) {
     float elapsed_time = (float)(current_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
     GLint timeLocation = glGetUniformLocation(glitch_shader_program, "time");
     glUniform1f(timeLocation, elapsed_time);
-
-    printf("Rendering with glitch shader. Time: %f\n", elapsed_time);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
