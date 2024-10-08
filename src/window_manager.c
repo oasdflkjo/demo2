@@ -8,8 +8,10 @@
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 
 #define WINDOW_TITLE "OpenGL Particle System"
+#define WINDOW_CLASS_NAME "OpenGLWindow"
 
-struct WindowManager {
+struct WindowManager
+{
     HWND hwnd;
     HDC hdc;
     HGLRC hrc;
@@ -19,77 +21,22 @@ struct WindowManager {
 
 static int g_should_close = 0;
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-        case WM_CLOSE:
-            g_should_close = 1;
-            return 0;
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
+static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+    case WM_CLOSE:
+        g_should_close = 1;
+        return 0;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-WindowManager* window_manager_create(void) {
-    WindowManager* manager = malloc(sizeof(WindowManager));
-    if (manager) {
-        manager->hwnd = NULL;
-        manager->hdc = NULL;
-        manager->hrc = NULL;
-        manager->width = 0;
-        manager->height = 0;
-    }
-    return manager;
-}
-
-int window_manager_initialize(WindowManager* window_manager) {
-    WNDCLASSA wc = {0};
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = "OpenGLWindow";
-    
-    if (!RegisterClassA(&wc)) {
-        fprintf(stderr, "Failed to register window class\n");
-        return 0;
-    }
-
-    // Get the primary monitor's dimensions
-    HMONITOR hmon = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
-    MONITORINFO mi = { 
-        .cbSize = sizeof(mi),
-        .rcMonitor = {0}
-    };
-    if (!GetMonitorInfo(hmon, &mi)) {
-        fprintf(stderr, "Failed to get monitor info\n");
-        return 0;
-    }
-
-    int width = mi.rcMonitor.right - mi.rcMonitor.left;
-    int height = mi.rcMonitor.bottom - mi.rcMonitor.top;
-
-    // Create a borderless window that covers the entire screen
-    window_manager->hwnd = CreateWindowExA(
-        0,
-        "OpenGLWindow",
-        WINDOW_TITLE,
-        WS_POPUP | WS_VISIBLE,  // Borderless fullscreen
-        mi.rcMonitor.left, mi.rcMonitor.top, width, height,
-        NULL,
-        NULL,
-        GetModuleHandle(NULL),
-        NULL
-    );
-
-    if (!window_manager->hwnd) {
-        fprintf(stderr, "Failed to create window\n");
-        return 0;
-    }
-
-    window_manager->hdc = GetDC(window_manager->hwnd);
-    window_manager->width = width;
-    window_manager->height = height;
-
+static BOOL SetupPixelFormat(HDC hdc)
+{
     PIXELFORMATDESCRIPTOR pfd = {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,
@@ -106,68 +53,115 @@ int window_manager_initialize(WindowManager* window_manager) {
         0,
         PFD_MAIN_PLANE,
         0,
-        0, 0, 0
-    };
+        0, 0, 0};
 
-    int pf = ChoosePixelFormat(window_manager->hdc, &pfd);
-    if (!pf) {
-        fprintf(stderr, "Failed to choose pixel format\n");
-        return 0;
-    }
-
-    if (!SetPixelFormat(window_manager->hdc, pf, &pfd)) {
+    int pf = ChoosePixelFormat(hdc, &pfd);
+    if (!pf || !SetPixelFormat(hdc, pf, &pfd))
+    {
         fprintf(stderr, "Failed to set pixel format\n");
-        return 0;
+        return FALSE;
     }
+    return TRUE;
+}
 
-    // Create a temporary context
-    HGLRC tempContext = wglCreateContext(window_manager->hdc);
-    wglMakeCurrent(window_manager->hdc, tempContext);
+static HGLRC CreateOpenGLContext(HDC hdc)
+{
+    HGLRC tempContext = wglCreateContext(hdc);
+    wglMakeCurrent(hdc, tempContext);
 
-    // Load wglCreateContextAttribsARB function
-    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB =
+        (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 
-    if (!wglCreateContextAttribsARB) {
+    if (!wglCreateContextAttribsARB)
+    {
         fprintf(stderr, "Failed to get wglCreateContextAttribsARB function\n");
-        return 0;
+        return NULL;
     }
 
-    // Set attributes for OpenGL 4.6 core profile
     int attribs[] = {
         WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
         WGL_CONTEXT_MINOR_VERSION_ARB, 6,
         WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-        0
-    };
+        0};
 
-    // Create OpenGL 4.6 core profile context
-    window_manager->hrc = wglCreateContextAttribsARB(window_manager->hdc, 0, attribs);
+    HGLRC hrc = wglCreateContextAttribsARB(hdc, 0, attribs);
 
-    // Delete temporary context and make new context current
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(tempContext);
-    wglMakeCurrent(window_manager->hdc, window_manager->hrc);
+    wglMakeCurrent(hdc, hrc);
 
-    // Load modern OpenGL functions
+    return hrc;
+}
+
+WindowManager *window_manager_create(void)
+{
+    WindowManager *manager = calloc(1, sizeof(WindowManager));
+    return manager;
+}
+
+int window_manager_initialize(WindowManager *wm)
+{
+    WNDCLASSA wc = {
+        .lpfnWndProc = WindowProc,
+        .hInstance = GetModuleHandle(NULL),
+        .lpszClassName = WINDOW_CLASS_NAME};
+
+    if (!RegisterClassA(&wc))
+    {
+        fprintf(stderr, "Failed to register window class\n");
+        return 0;
+    }
+
+    // Get the actual screen resolution
+    DEVMODE dm;
+    ZeroMemory(&dm, sizeof(dm));
+    dm.dmSize = sizeof(dm);
+    if (EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &dm) == 0)
+    {
+        fprintf(stderr, "Failed to get display settings\n");
+        return 0;
+    }
+    wm->width = dm.dmPelsWidth;
+    wm->height = dm.dmPelsHeight;
+
+    wm->hwnd = CreateWindowExA(
+        WS_EX_TOPMOST | WS_EX_APPWINDOW,
+        WINDOW_CLASS_NAME, WINDOW_TITLE,
+        WS_POPUP | WS_VISIBLE,
+        0, 0, wm->width, wm->height,
+        NULL, NULL, GetModuleHandle(NULL), NULL);
+
+    if (!wm->hwnd)
+    {
+        fprintf(stderr, "Failed to create window\n");
+        return 0;
+    }
+
+    wm->hdc = GetDC(wm->hwnd);
+
+    if (!SetupPixelFormat(wm->hdc) || !(wm->hrc = CreateOpenGLContext(wm->hdc)))
+    {
+        return 0;
+    }
+
     LoadOpenGLFunctions();
 
-    ShowWindow(window_manager->hwnd, SW_SHOW);
+    ShowWindow(wm->hwnd, SW_SHOW);
+    window_manager_hide_cursor(wm);
 
-    // Print OpenGL version information
-    const GLubyte* version = glGetString(GL_VERSION);
-    const GLubyte* renderer = glGetString(GL_RENDERER);
-    printf("OpenGL Version: %s\n", version);
-    printf("OpenGL Renderer: %s\n", renderer);
-
-    window_manager_hide_cursor(window_manager);
+    printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+    printf("OpenGL Renderer: %s\n", glGetString(GL_RENDERER));
 
     return 1;
 }
 
-bool window_manager_update(WindowManager* window_manager) {
+bool window_manager_update(WindowManager *wm)
+{
     MSG msg;
-    while (PeekMessage(&msg, window_manager->hwnd, 0, 0, PM_REMOVE)) {
-        if (msg.message == WM_QUIT) {
+    while (PeekMessage(&msg, wm->hwnd, 0, 0, PM_REMOVE))
+    {
+        if (msg.message == WM_QUIT)
+        {
             g_should_close = 1;
             return false;
         }
@@ -177,51 +171,34 @@ bool window_manager_update(WindowManager* window_manager) {
     return !g_should_close;
 }
 
-void window_manager_shutdown(WindowManager* window_manager) {
+void window_manager_shutdown(WindowManager *wm)
+{
     wglMakeCurrent(NULL, NULL);
-    wglDeleteContext(window_manager->hrc);
-    ReleaseDC(window_manager->hwnd, window_manager->hdc);
-    DestroyWindow(window_manager->hwnd);
+    wglDeleteContext(wm->hrc);
+    ReleaseDC(wm->hwnd, wm->hdc);
+    DestroyWindow(wm->hwnd);
 }
 
-void window_manager_destroy(WindowManager* window_manager) {
-    if (window_manager) {
-        free(window_manager);
-    }
+void window_manager_destroy(WindowManager *wm)
+{
+    free(wm);
 }
 
-HWND window_manager_get_window(WindowManager* window_manager) {
-    return window_manager->hwnd;
-}
+HWND window_manager_get_window(WindowManager *wm) { return wm->hwnd; }
+HDC window_manager_get_dc(WindowManager *wm) { return wm->hdc; }
+int window_manager_get_width(WindowManager *wm) { return wm->width; }
+int window_manager_get_height(WindowManager *wm) { return wm->height; }
 
-int window_manager_should_close(WindowManager* window_manager) {
-    MSG msg;
-    while (PeekMessage(&msg, window_manager->hwnd, 0, 0, PM_REMOVE)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+int window_manager_should_close(WindowManager *wm)
+{
+    (void)wm;
     return g_should_close;
 }
 
-HDC window_manager_get_dc(WindowManager* window_manager) {
-    return window_manager->hdc;
-}
+void window_manager_swap_buffers(WindowManager *wm) { SwapBuffers(wm->hdc); }
 
-// Add this function at the end of the file
-void window_manager_swap_buffers(WindowManager* window_manager) {
-    SwapBuffers(window_manager->hdc);
-}
-
-int window_manager_get_width(WindowManager* window_manager) {
-    return window_manager->width;
-}
-
-int window_manager_get_height(WindowManager* window_manager) {
-    return window_manager->height;
-}
-
-// Add this function
-void window_manager_hide_cursor(WindowManager* window_manager) {
-    (void)window_manager;  // Suppress unused parameter warning
+void window_manager_hide_cursor(WindowManager *wm)
+{
+    (void)wm;
     ShowCursor(FALSE);
 }
