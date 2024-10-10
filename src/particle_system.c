@@ -13,7 +13,8 @@
 
 struct ParticleSystem {
     int max_particles;
-    GLuint ssbo;
+    GLuint position_ssbo;
+    GLuint velocity_ssbo;
     GLuint compute_shader;
     int width;
     int height;
@@ -26,26 +27,38 @@ ParticleSystem* particle_system_create(int max_particles, int width, int height)
         ps->width = width;
         ps->height = height;
 
-        // Create SSBO for compute shader
-        glGenBuffers(1, &ps->ssbo);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->ssbo);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Particle) * max_particles, NULL, GL_DYNAMIC_DRAW);
+        // Create SSBOs for compute shader
+        glGenBuffers(1, &ps->position_ssbo);
+        glGenBuffers(1, &ps->velocity_ssbo);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->position_ssbo);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 2 * max_particles, NULL, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->velocity_ssbo);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 2 * max_particles, NULL, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         // Initialize particles
-        Particle* particles = (Particle*)malloc(sizeof(Particle) * max_particles);
+        float* position_data = (float*)malloc(sizeof(float) * 2 * max_particles);
+        float* velocity_data = (float*)malloc(sizeof(float) * 2 * max_particles);
         for (int i = 0; i < max_particles; i++) {
-            particles[i].x = ((float)rand() / RAND_MAX) * 2 - 1;  // Range: -1 to 1
-            particles[i].y = ((float)rand() / RAND_MAX) * 2 - 1;  // Range: -1 to 1
-            particles[i].vx = ((float)rand() / RAND_MAX) * 0.1f - 0.05f;  // Small initial velocity
-            particles[i].vy = ((float)rand() / RAND_MAX) * 0.1f - 0.05f;  // Small initial velocity
+            position_data[i * 2 + 0] = ((float)rand() / RAND_MAX) * 2 - 1;  // x position
+            position_data[i * 2 + 1] = ((float)rand() / RAND_MAX) * 2 - 1;  // y position
+            velocity_data[i * 2 + 0] = ((float)rand() / RAND_MAX) * 0.1f - 0.05f;  // x velocity
+            velocity_data[i * 2 + 1] = ((float)rand() / RAND_MAX) * 0.1f - 0.05f;  // y velocity
         }
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->ssbo);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(Particle) * max_particles, particles);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->position_ssbo);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float) * 2 * max_particles, position_data);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        free(particles);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ps->velocity_ssbo);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float) * 2 * max_particles, velocity_data);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        free(position_data);
+        free(velocity_data);
 
         // Load compute shader
         ps->compute_shader = create_compute_shader("shaders/particle.comp");
@@ -69,8 +82,12 @@ void particle_system_update(ParticleSystem* ps, float delta_time, float mouse_x,
     float aspect_ratio = (float)ps->width / ps->height;
     glUniform1f(glGetUniformLocation(ps->compute_shader, "aspect_ratio"), aspect_ratio);
     
-    // Bind SSBO
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ps->ssbo);
+    // Set number of particles
+    glUniform1i(glGetUniformLocation(ps->compute_shader, "num_particles"), ps->max_particles);
+    
+    // Bind SSBOs
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ps->position_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ps->velocity_ssbo);
     
     // Dispatch compute shader
     glDispatchCompute(ps->max_particles / WORK_GROUP_SIZE + 1, 1, 1);
@@ -79,8 +96,8 @@ void particle_system_update(ParticleSystem* ps, float delta_time, float mouse_x,
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-GLuint particle_system_get_ssbo(ParticleSystem* ps) {
-    return ps->ssbo;
+GLuint particle_system_get_position_ssbo(ParticleSystem* ps) {
+    return ps->position_ssbo;
 }
 
 int particle_system_get_max_particles(ParticleSystem* ps) {
@@ -89,7 +106,8 @@ int particle_system_get_max_particles(ParticleSystem* ps) {
 
 void particle_system_destroy(ParticleSystem* ps) {
     if (ps) {
-        glDeleteBuffers(1, &ps->ssbo);
+        glDeleteBuffers(1, &ps->position_ssbo);
+        glDeleteBuffers(1, &ps->velocity_ssbo);
         glDeleteProgram(ps->compute_shader);
         free(ps);
     }

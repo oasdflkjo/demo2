@@ -1,33 +1,34 @@
 #version 430 core
 
-struct Particle {
-    vec2 position;
-    vec2 velocity;
+layout(std430, binding = 0) buffer ParticleBuffer {
+    vec2 positions[];
 };
 
-layout(std430, binding = 0) buffer ParticleBuffer {
-    Particle particles[];
+layout(std430, binding = 1) buffer VelocityBuffer {
+    vec2 velocities[];
 };
 
 uniform float delta_time;
 uniform vec2 mouse_pos;
 uniform float aspect_ratio;
+uniform int num_particles;
 
 layout(local_size_x = 256) in;
 
-const float GRAVITY = 0.05;
-const float RESISTANCE = 0.99;
+const float GRAVITY = 0.001;
+const float RESISTANCE = 0.997;
 const float ATTRACTION_STRENGTH = 5.0;
 
 void main() {
     uint gid = gl_GlobalInvocationID.x;
     
-    if (gid >= particles.length()) return;
+    if (gid >= num_particles) return;
     
-    Particle p = particles[gid];
+    vec2 position = positions[gid];
+    vec2 velocity = velocities[gid];
     
     // Calculate direction to mouse
-    vec2 to_mouse = mouse_pos - p.position;
+    vec2 to_mouse = mouse_pos - position;
     to_mouse.x *= aspect_ratio; // Adjust for aspect ratio
     float distance = length(to_mouse);
     
@@ -38,16 +39,17 @@ void main() {
     vec2 gravity = vec2(0.0, -GRAVITY);
     
     // Update velocity
-    p.velocity += (attraction + gravity) * delta_time;
+    velocity += (attraction + gravity) * delta_time;
     
     // Apply resistance
-    p.velocity *= RESISTANCE;
+    velocity *= RESISTANCE;
     
     // Update position
-    p.position += p.velocity * delta_time;
+    position += velocity * delta_time;
     
     // Wrap particles around the screen
-    p.position = mod(p.position + 1.0, 2.0) - 1.0;
+    position = mod(position + 1.0, 2.0) - 1.0;
     
-    particles[gid] = p;
+    positions[gid] = position;
+    velocities[gid] = velocity;
 }

@@ -188,12 +188,12 @@ void renderer_render_particles(ParticleSystem* ps) {
     glUseProgram(particle_render_shader);
     glBindVertexArray(particle_vao);
     
-    // Bind SSBO to the VAO
-    GLuint ssbo = particle_system_get_ssbo(ps);
-    glBindBuffer(GL_ARRAY_BUFFER, ssbo);
+    // Bind position SSBO to the VAO
+    GLuint position_ssbo = particle_system_get_position_ssbo(ps);
+    glBindBuffer(GL_ARRAY_BUFFER, position_ssbo);
     
     // Update attribute pointers (only position now)
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(0);
     
     glPointSize(2.0f);

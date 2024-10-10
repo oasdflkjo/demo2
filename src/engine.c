@@ -53,7 +53,7 @@ int engine_initialize(Engine *engine)
 
     // Initialize particle system
     srand(time(NULL));                                                       // Seed random number generator
-    engine->particle_system = particle_system_create(100000, width, height); // Create 100,000 particles
+    engine->particle_system = particle_system_create(5000000, width, height); // Create 100,000 particles
     if (!engine->particle_system)
     {
         fprintf(stderr, "Failed to create particle system\n");
