@@ -10,6 +10,12 @@
 #define WINDOW_TITLE "OpenGL Particle System"
 #define WINDOW_CLASS_NAME "OpenGLWindow"
 
+bool wm_update(WindowManager* window_manager);
+int wm_should_close(WindowManager* window_manager);
+void wm_swap_buffers(WindowManager* window_manager);
+void wm_hide_cursor(WindowManager* window_manager);
+HDC wm_get_dc(WindowManager* window_manager);
+
 struct WindowManager
 {
     HWND hwnd;
@@ -93,13 +99,13 @@ static HGLRC CreateOpenGLContext(HDC hdc)
     return hrc;
 }
 
-WindowManager *window_manager_create(void)
+WindowManager *wm_create(void)
 {
     WindowManager *manager = calloc(1, sizeof(WindowManager));
     return manager;
 }
 
-int window_manager_initialize(WindowManager *wm)
+int wm_init(WindowManager *wm)
 {
     SetProcessDPIAware();
 
@@ -149,7 +155,7 @@ int window_manager_initialize(WindowManager *wm)
     LoadOpenGLFunctions();
 
     ShowWindow(wm->hwnd, SW_SHOW);
-    window_manager_hide_cursor(wm);
+    wm_hide_cursor(wm);
 
     printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
     printf("OpenGL Renderer: %s\n", glGetString(GL_RENDERER));
@@ -157,7 +163,7 @@ int window_manager_initialize(WindowManager *wm)
     return 1;
 }
 
-bool window_manager_update(WindowManager *wm)
+bool wm_update(WindowManager *wm)
 {
     MSG msg;
     while (PeekMessage(&msg, wm->hwnd, 0, 0, PM_REMOVE))
@@ -173,7 +179,7 @@ bool window_manager_update(WindowManager *wm)
     return !g_should_close;
 }
 
-void window_manager_shutdown(WindowManager *wm)
+void wm_shutdown(WindowManager *wm)
 {
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(wm->hrc);
@@ -181,25 +187,25 @@ void window_manager_shutdown(WindowManager *wm)
     DestroyWindow(wm->hwnd);
 }
 
-void window_manager_destroy(WindowManager *wm)
+void wm_destroy(WindowManager *wm)
 {
     free(wm);
 }
 
-HWND window_manager_get_window(WindowManager *wm) { return wm->hwnd; }
-HDC window_manager_get_dc(WindowManager *wm) { return wm->hdc; }
-int window_manager_get_width(WindowManager *wm) { return wm->width; }
-int window_manager_get_height(WindowManager *wm) { return wm->height; }
+HWND wm_get_window(WindowManager *wm) { return wm->hwnd; }
+HDC wm_get_dc(WindowManager *wm) { return wm->hdc; }
+int wm_get_width(WindowManager *wm) { return wm->width; }
+int wm_get_height(WindowManager *wm) { return wm->height; }
 
-int window_manager_should_close(WindowManager *wm)
+int wm_should_close(WindowManager *wm)
 {
     (void)wm;
     return g_should_close;
 }
 
-void window_manager_swap_buffers(WindowManager *wm) { SwapBuffers(wm->hdc); }
+void wm_swap_buffers(WindowManager *wm) { SwapBuffers(wm->hdc); }
 
-void window_manager_hide_cursor(WindowManager *wm)
+void wm_hide_cursor(WindowManager *wm)
 {
     (void)wm;
     ShowCursor(FALSE);

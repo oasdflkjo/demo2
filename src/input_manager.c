@@ -1,46 +1,32 @@
 #include "input_manager.h"
 #include <stdlib.h>
 
+#define MAX_KEYS 256
+
 struct InputManager {
     HWND window;
-    MousePosition mouse_position;
-    bool keys[256];
+    bool keys[MAX_KEYS];
 };
 
 InputManager* input_manager_create(HWND window) {
-    InputManager* input_manager = (InputManager*)malloc(sizeof(InputManager));
-    if (input_manager) {
-        input_manager->window = window;
-        input_manager->mouse_position.x = 0;
-        input_manager->mouse_position.y = 0;
-        memset(input_manager->keys, 0, sizeof(input_manager->keys));
+    InputManager* im = malloc(sizeof(InputManager));
+    if (im) {
+        im->window = window;
+        memset(im->keys, 0, sizeof(im->keys));
     }
-    return input_manager;
+    return im;
 }
 
-void input_manager_destroy(InputManager* input_manager) {
-    free(input_manager);
+void input_manager_destroy(InputManager* im) {
+    free(im);
 }
 
-void input_manager_update(InputManager* input_manager) {
-    POINT cursor_pos;
-    if (GetCursorPos(&cursor_pos)) {
-        if (ScreenToClient(input_manager->window, &cursor_pos)) {
-            input_manager->mouse_position.x = cursor_pos.x;
-            input_manager->mouse_position.y = cursor_pos.y;
-        }
-    }
-
-    // Update key states
-    for (int i = 0; i < 256; i++) {
-        input_manager->keys[i] = (GetAsyncKeyState(i) & 0x8000) != 0;
+void input_manager_update(InputManager* im) {
+    for (int i = 0; i < MAX_KEYS; i++) {
+        im->keys[i] = GetAsyncKeyState(i) & 0x8000;
     }
 }
 
-MousePosition input_manager_get_mouse_position(InputManager* input_manager) {
-    return input_manager->mouse_position;
-}
-
-bool input_manager_is_key_pressed(InputManager* input_manager, int key) {
-    return input_manager->keys[key];
+bool input_manager_is_key_pressed(InputManager* im, int key_code) {
+    return im->keys[key_code];
 }

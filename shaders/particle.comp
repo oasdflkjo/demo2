@@ -15,8 +15,7 @@ uniform int num_particles;
 
 layout(local_size_x = 256) in;
 
-const float GRAVITY = 0.001;
-const float RESISTANCE = 0.997;
+const float RESISTANCE = 0.998;
 const float ATTRACTION_STRENGTH = 5.0;
 
 void main() {
@@ -35,11 +34,8 @@ void main() {
     // Apply attraction to mouse
     vec2 attraction = normalize(to_mouse) * ATTRACTION_STRENGTH / (distance + 1.0);
     
-    // Apply gravity
-    vec2 gravity = vec2(0.0, -GRAVITY);
-    
     // Update velocity
-    velocity += (attraction + gravity) * delta_time;
+    velocity += attraction * delta_time;
     
     // Apply resistance
     velocity *= RESISTANCE;
