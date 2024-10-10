@@ -4,6 +4,7 @@
 #include "particle_system.h"
 #include <stdio.h>
 #include <windows.h>
+#include <math.h>
 
 static GLuint cursor_vao, cursor_vbo;
 static GLuint cursor_shader_program;
@@ -11,13 +12,31 @@ static GLuint fbo, rbo, screen_texture;
 static GLuint quad_vao, quad_vbo;
 static GLuint glitch_shader_program;
 static LARGE_INTEGER start_time, frequency;
-static GLuint particle_vao;
+static GLuint particle_vao, particle_vbo;
 static GLuint particle_render_shader;
+static float projection[16], view[16];
 
 void renderer_init_cursor(void);
 void renderer_init_framebuffer(int width, int height);
 void renderer_init_fullscreen_quad(void);
 void renderer_render_particles(ParticleSystem* ps);
+
+// Simple matrix operations
+void matrix_identity(float* m) {
+    for (int i = 0; i < 16; i++) {
+        m[i] = (i % 5 == 0) ? 1.0f : 0.0f;
+    }
+}
+
+void matrix_ortho(float* m, float left, float right, float bottom, float top, float near_val, float far_val) {
+    m[0] = 2.0f / (right - left);
+    m[5] = 2.0f / (top - bottom);
+    m[10] = -2.0f / (far_val - near_val);
+    m[12] = -(right + left) / (right - left);
+    m[13] = -(top + bottom) / (top - bottom);
+    m[14] = -(far_val + near_val) / (far_val - near_val);
+    m[15] = 1.0f;
+}
 
 int renderer_initialize(int width, int height) {
     renderer_init_cursor();
@@ -33,7 +52,13 @@ int renderer_initialize(int width, int height) {
 
     // Initialize particle rendering
     glGenVertexArrays(1, &particle_vao);
+    glGenBuffers(1, &particle_vbo);
     glBindVertexArray(particle_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, particle_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glVertexAttribDivisor(0, 1);  // This is the key for instanced rendering
     glBindVertexArray(0);
 
     // Load particle render shader
@@ -42,6 +67,10 @@ int renderer_initialize(int width, int height) {
         fprintf(stderr, "Failed to create render shader for particle system\n");
         return 0;
     }
+
+    // Initialize projection and view matrices
+    matrix_ortho(projection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+    matrix_identity(view);
 
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_time);
@@ -186,6 +215,11 @@ void renderer_end_frame(void) {
 
 void renderer_render_particles(ParticleSystem* ps) {
     glUseProgram(particle_render_shader);
+    
+    // Set uniforms
+    glUniformMatrix4fv(glGetUniformLocation(particle_render_shader, "projection"), 1, GL_FALSE, projection);
+    glUniformMatrix4fv(glGetUniformLocation(particle_render_shader, "view"), 1, GL_FALSE, view);
+
     glBindVertexArray(particle_vao);
     
     // Bind position SSBO to the VAO
@@ -197,7 +231,7 @@ void renderer_render_particles(ParticleSystem* ps) {
     glEnableVertexAttribArray(0);
     
     glPointSize(2.0f);
-    glDrawArrays(GL_POINTS, 0, particle_system_get_max_particles(ps));
+    glDrawArraysInstanced(GL_POINTS, 0, 1, particle_system_get_max_particles(ps));
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);

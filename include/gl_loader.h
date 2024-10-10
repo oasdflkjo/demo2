@@ -54,6 +54,7 @@ extern PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
 extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
 extern PFNGLDELETERENDERBUFFERSPROC glDeleteRenderbuffers;
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
+extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 
 void LoadOpenGLFunctions();
 

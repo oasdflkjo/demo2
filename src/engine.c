@@ -9,7 +9,8 @@
 #include <stdio.h>
 #include <windows.h>
 #include <mmsystem.h>
-#pragma comment(lib, "winmm.lib")
+// Remove or comment out the following line:
+// #pragma comment(lib, "winmm.lib")
 
 #define TARGET_FPS 160
 #define FRAME_TIME (1000.0 / TARGET_FPS)
